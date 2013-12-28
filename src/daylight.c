@@ -6,11 +6,16 @@
  */
 #include <pebble.h>
 
+static char THEME[7] = "simple";
+static int OFFSET = -5;
+
 Window *window;
-static char theme[6] = "simple";
+GBitmap *world_image;
+BitmapLayer *world_layer;
 
 enum {
-	KEY_THEME
+	KEY_THEME,
+	KEY_OFFSET
 };
 
 typedef struct {
@@ -19,26 +24,66 @@ typedef struct {
 
 static BarData bars[24];
 
+static void mark_all_dirty() {
+	for (int i = 0, x = 24; i < x; i++) {
+		BarData *bar_data = &bars[i];
+		layer_mark_dirty(bar_data->bar_layer);
+	}
+}
+
 static void set_theme() {
 	if (persist_exists(KEY_THEME)) {
-		persist_read_string(KEY_THEME, theme, 6);
+		persist_read_string(KEY_THEME, THEME, 7);
 	}
 	
-	APP_LOG(APP_LOG_LEVEL_INFO, "SELECTED THEME: %s", theme);
+	APP_LOG(APP_LOG_LEVEL_INFO, "SELECTED THEME: %s", THEME);
 	
-//	bool hide = strcmp(theme, "simple") == 0 ? true : false;
+	bool hide = strcmp(THEME, "simple") == 0 ? true : false;
+	
+	layer_set_hidden(bitmap_layer_get_layer(world_layer), hide);
+}
+
+static void set_offset() {
+	if (persist_exists(KEY_OFFSET)) {
+		OFFSET = persist_read_int(KEY_OFFSET);
+	}
+	
+	if (strcmp(THEME, "simple") == 0) {
+		OFFSET = 0;
+	}
+	
+	APP_LOG(APP_LOG_LEVEL_INFO, "SELECTED OFFSET: %d", OFFSET);
+	
+	mark_all_dirty();
 }
 
 static void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *theme_tuple = dict_find(iter, KEY_THEME);
+	Tuple *timezone_tuple = dict_find(iter, KEY_OFFSET);
 	
 	if (theme_tuple) {
 		APP_LOG(APP_LOG_LEVEL_INFO, "SETTING THEME: %s", theme_tuple->value->cstring);
 
 		persist_write_string(KEY_THEME, theme_tuple->value->cstring);
-		strncpy(theme, theme_tuple->value->cstring, 6);
+		strncpy(THEME, theme_tuple->value->cstring, 7);
 		
 		set_theme();
+	}
+	
+	if (timezone_tuple) {
+		int timezone = timezone_tuple->value->data[0];
+		
+		// We have to subtract 256 to fix a weird issue with how Pebble handles negative ints
+		if (timezone > 24) {
+			timezone = timezone - 256;
+		}
+		
+		APP_LOG(APP_LOG_LEVEL_INFO, "SETTING OFFSET: %d", timezone);
+		
+		persist_write_int(KEY_OFFSET, timezone);
+		OFFSET = timezone;
+		
+		set_offset();
 	}
 }
 
@@ -46,29 +91,38 @@ static void in_dropped_handler(AppMessageResult reason, void *context) {
 	
 }
 
-static void mark_all_dirty() {
-	for(int i = 0, x = 24; i < x; i++) {
-		BarData *bar_data = &bars[i];
-		layer_mark_dirty(bar_data->bar_layer);
-	}
-}
-
 static void handle_hour_tick(struct tm *tick_time, TimeUnits units_changed) {
 	mark_all_dirty();
 }
 
 static void bar_layer_update_callback(Layer *layer, GContext* ctx) {
-//	time_t now = time(NULL);
-//	struct tm *t = localtime(&now);
+	time_t now = time(NULL);
+	struct tm *t = localtime(&now);
 	
 	GRect bounds = layer_get_bounds(layer);
 	GRect frame = layer_get_frame(layer);
 	
-	int i = frame.origin.x / 6;
+	int id = (23 - (frame.origin.x / 6));
+	int hour = t->tm_hour - OFFSET;
+	int light_start = (hour - 6);
+	int light_end = (hour + 6);
 	
-	if(i % 2 == 0) {
-		graphics_context_set_fill_color(ctx, GColorBlack);
-	} else {
+	
+	APP_LOG(APP_LOG_LEVEL_INFO, "START: %d", light_start);
+	APP_LOG(APP_LOG_LEVEL_INFO, "END: %d", light_end);
+	
+	
+	graphics_context_set_fill_color(ctx, GColorBlack);
+	
+	if (id > light_start && id < light_end) {
+		graphics_context_set_fill_color(ctx, GColorWhite);
+	}
+	
+	if (light_end > 23 && id < (light_end % 23)) {
+		graphics_context_set_fill_color(ctx, GColorWhite);
+	}
+	
+	if (id > (23 + light_start)) {
 		graphics_context_set_fill_color(ctx, GColorWhite);
 	}
 	
@@ -78,7 +132,7 @@ static void bar_layer_update_callback(Layer *layer, GContext* ctx) {
 static void create_bar_layers() {
 	Layer *window_layer = window_get_root_layer(window);
 	
-	for(int i = 0, x = 24; i < x; i++) {
+	for (int i = 0, x = 24; i < x; i++) {
 		BarData *bar_data = &bars[i];
 
 		bar_data->bar_layer = layer_create(GRect((i * 6), 0, 6, 168));
@@ -97,19 +151,29 @@ static void init() {
 	window_set_fullscreen(window, true);
 	window_stack_push(window, true);
 	
+	Layer *window_layer = window_get_root_layer(window);
+	
 	create_bar_layers();
+	
+	// Create the world image
+	world_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_WORLD);
+	world_layer = bitmap_layer_create(layer_get_frame(window_layer));
+	bitmap_layer_set_bitmap(world_layer, world_image);
+	bitmap_layer_set_compositing_mode(world_layer, GCompOpAnd);
+	layer_add_child(window_layer, bitmap_layer_get_layer(world_layer));
 	
 	tick_timer_service_subscribe(HOUR_UNIT, handle_hour_tick);
 	
 	set_theme();
-	
-	mark_all_dirty();
+	set_offset();
 }
 
 static void deinit() {
 	window_destroy(window);
+	gbitmap_destroy(world_image);
+	bitmap_layer_destroy(world_layer);
 	
-	for(int i = 0, x = 24; i < x; i++) {
+	for (int i = 0, x = 24; i < x; i++) {
 		BarData *bar_data = &bars[i];
 		layer_destroy(bar_data->bar_layer);
 	}

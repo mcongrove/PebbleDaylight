@@ -15,11 +15,18 @@
 		"theme": 0
 	},
 	"resources": {
-		"media": [{
-			"menuIcon": true,
-			"type": "png",
-			"name": "IMAGE_MENU_ICON",
-			"file": "images/menu_icon.png"
-		}]
+		"media": [
+			{
+				"menuIcon": true,
+				"type": "png",
+				"name": "IMAGE_MENU_ICON",
+				"file": "images/menu_icon.png"
+			},
+			{
+				"type": "png",
+				"name": "IMAGE_WORLD",
+				"file": "images/world.png"
+			}
+		]
 	}
 }
