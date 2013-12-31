@@ -13,16 +13,16 @@ Window *window;
 GBitmap *world_image;
 BitmapLayer *world_layer;
 
-enum {
-	KEY_THEME,
-	KEY_OFFSET
-};
-
 typedef struct {
   Layer *bar_layer;
 } BarData;
 
 static BarData bars[24];
+
+enum {
+	KEY_THEME,
+	KEY_OFFSET
+};
 
 static void mark_all_dirty() {
 	for (int i = 0, x = 24; i < x; i++) {
@@ -62,8 +62,6 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *timezone_tuple = dict_find(iter, KEY_OFFSET);
 	
 	if (theme_tuple) {
-		APP_LOG(APP_LOG_LEVEL_INFO, "SETTING THEME: %s", theme_tuple->value->cstring);
-
 		persist_write_string(KEY_THEME, theme_tuple->value->cstring);
 		strncpy(THEME, theme_tuple->value->cstring, 7);
 		
@@ -77,8 +75,6 @@ static void in_received_handler(DictionaryIterator *iter, void *context) {
 		if (timezone > 24) {
 			timezone = timezone - 256;
 		}
-		
-		APP_LOG(APP_LOG_LEVEL_INFO, "SETTING OFFSET: %d", timezone);
 		
 		persist_write_int(KEY_OFFSET, timezone);
 		OFFSET = timezone;
@@ -106,11 +102,6 @@ static void bar_layer_update_callback(Layer *layer, GContext* ctx) {
 	int hour = t->tm_hour - OFFSET;
 	int light_start = (hour - 6);
 	int light_end = (hour + 6);
-	
-	
-	APP_LOG(APP_LOG_LEVEL_INFO, "START: %d", light_start);
-	APP_LOG(APP_LOG_LEVEL_INFO, "END: %d", light_end);
-	
 	
 	graphics_context_set_fill_color(ctx, GColorBlack);
 	
