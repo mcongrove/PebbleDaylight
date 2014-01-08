@@ -5,8 +5,8 @@ Pebble.addEventListener("ready", function(e) {
 Pebble.addEventListener("showConfiguration", function(e) {
 	var options = JSON.parse(window.localStorage.getItem("options"));
 	
-	var url = "http://wearewearable.com/daylight/?" +
-			  "theme=" + encodeURIComponent(options["0"]) +
+	var url = "http://wearewearable.com/daylight/?v=1.0" +
+			  "&theme=" + encodeURIComponent(options["0"]) +
 			  "&offset=" + encodeURIComponent(options["1"][0]);
 	
 	Pebble.openURL(url);
