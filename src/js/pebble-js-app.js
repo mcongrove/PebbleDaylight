@@ -8,8 +8,8 @@ Pebble.addEventListener("showConfiguration", function(e) {
 	var url = "http://wearewearable.com/daylight/?v=1.0";
 	
 	if(options != null) {
-		url += "&theme=" + encodeURIComponent(options["0"]) +
-			"&offset=" + encodeURIComponent(options["1"][0]);
+		url += "&theme=" + (options["0"] ? encodeURIComponent(options["0"]) : "");
+			"&offset=" + (options["1"] && options["1"][0] != null ? encodeURIComponent(options["1"][0]) : "");
 	}
 	
 	Pebble.openURL(url);
