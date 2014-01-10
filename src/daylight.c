@@ -8,10 +8,13 @@
 
 static char THEME[7] = "simple";
 static int OFFSET = -5;
+static int NIGHT = 0;
 
 Window *window;
 GBitmap *world_image;
+GBitmap *world_image_night;
 BitmapLayer *world_layer;
+BitmapLayer *world_layer_night;
 
 typedef struct {
   Layer *bar_layer;
@@ -21,7 +24,8 @@ static BarData bars[24];
 
 enum {
 	KEY_THEME,
-	KEY_OFFSET
+	KEY_OFFSET,
+	KEY_NIGHT
 };
 
 static void mark_all_dirty() {
@@ -41,6 +45,7 @@ static void set_theme() {
 	bool hide = strcmp(THEME, "simple") == 0 ? true : false;
 	
 	layer_set_hidden(bitmap_layer_get_layer(world_layer), hide);
+	layer_set_hidden(bitmap_layer_get_layer(world_layer_night), hide);
 }
 
 static void set_offset() {
@@ -53,6 +58,20 @@ static void set_offset() {
 	}
 	
 	APP_LOG(APP_LOG_LEVEL_INFO, "SELECTED OFFSET: %d", OFFSET);
+	
+	mark_all_dirty();
+}
+
+static void set_night_mode() {
+	if (persist_exists(KEY_NIGHT)) {
+		NIGHT = persist_read_int(KEY_NIGHT);
+	}
+	
+	bool hide = NIGHT == 0 ? true : false;
+	
+	layer_set_hidden(bitmap_layer_get_layer(world_layer_night), hide);
+	
+	APP_LOG(APP_LOG_LEVEL_INFO, "SELECTED NIGHT MODE: %d", NIGHT);
 	
 	mark_all_dirty();
 }
@@ -153,16 +172,26 @@ static void init() {
 	bitmap_layer_set_compositing_mode(world_layer, GCompOpAnd);
 	layer_add_child(window_layer, bitmap_layer_get_layer(world_layer));
 	
+	// Create the night world image
+	world_image_night = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_WORLD_NIGHT);
+	world_layer_night = bitmap_layer_create(layer_get_frame(window_layer));
+	bitmap_layer_set_bitmap(world_layer_night, world_image_night);
+	bitmap_layer_set_compositing_mode(world_layer_night, GCompOpOr);
+	layer_add_child(window_layer, bitmap_layer_get_layer(world_layer_night));
+	
 	tick_timer_service_subscribe(HOUR_UNIT, handle_hour_tick);
 	
 	set_theme();
 	set_offset();
+	set_night_mode();
 }
 
 static void deinit() {
 	window_destroy(window);
 	gbitmap_destroy(world_image);
+	gbitmap_destroy(world_image_night);
 	bitmap_layer_destroy(world_layer);
+	bitmap_layer_destroy(world_layer_night);
 	
 	for (int i = 0, x = 24; i < x; i++) {
 		BarData *bar_data = &bars[i];

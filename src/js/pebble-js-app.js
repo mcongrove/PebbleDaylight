@@ -5,11 +5,12 @@ Pebble.addEventListener("ready", function(e) {
 Pebble.addEventListener("showConfiguration", function(e) {
 	var options = JSON.parse(window.localStorage.getItem("options"));
 	
-	var url = "http://wearewearable.com/daylight/?v=1.0";
+	var url = "http://wearewearable.com/daylight/?v=1.1";
 	
 	if(options != null) {
 		url += "&theme=" + (options["0"] ? encodeURIComponent(options["0"]) : "") +
-			"&offset=" + (options["1"] && options["1"][0] != null ? encodeURIComponent(options["1"][0]) : "");
+			"&offset=" + (options["1"] && options["1"][0] != null ? encodeURIComponent(options["1"][0]) : "") +
+			"&nightmode=" + (options["2"] && options["2"][0] != null ? encodeURIComponent(options["2"][0]) : "");
 	}
 	
 	Pebble.openURL(url);
