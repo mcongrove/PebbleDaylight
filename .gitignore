@@ -5,3 +5,5 @@ build
 /.lock-waf_darwin_build
 
 /.DS_Store
+
+/resources/images/.DS_Store

@@ -3,8 +3,8 @@
 	"shortName": "Daylight",
 	"longName": "Daylight",
 	"companyName": "Matthew Congrove",
-	"versionCode": 1,
-	"versionLabel": "1.0",
+	"versionCode": 2,
+	"versionLabel": "1.1",
 	"watchapp": {
 		"watchface": true
 	},
@@ -12,7 +12,9 @@
 		"configurable"
 	],
 	"appKeys": {
-		"theme": 0
+		"theme": 0,
+		"offset": 1,
+		"night": 2
 	},
 	"resources": {
 		"media": [
@@ -26,6 +28,11 @@
 				"type": "png",
 				"name": "IMAGE_WORLD",
 				"file": "images/world.png"
+			},
+			{
+				"type": "png",
+				"name": "IMAGE_WORLD_NIGHT",
+				"file": "images/world_night.png"
 			}
 		]
 	}
