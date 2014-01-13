@@ -10,6 +10,9 @@
 			case '1.1':
 				require('1-1.php');
 				break;
+			default:
+				require('1-0.php');
+				break;
 		}
 	} else {
 		require('1-0.php');

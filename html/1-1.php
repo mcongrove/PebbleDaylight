@@ -50,7 +50,7 @@
 <title>"Daylight" Configuration</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<script src="http://code.jquery.com/jquery-1.9.1.min.js" type="text/javascript"></script>
+<script src="http://wearewearable.com/pconfig/pconfig.js" type="text/javascript"></script>
 <style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;outline:0;border:0;background:transparent;vertical-align:baseline;font-size:100%}body{background:#FFF;line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}:focus{outline:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-spacing:0;border-collapse:collapse}a{text-decoration:none}a:hover{text-decoration:underline}.clear{clear:both}.container{margin:0;padding:0 0 20px;width:100%}h2{padding:0 2%;width:96%;height:45px;background:#000;color:#FFF;letter-spacing:.07em;font-weight:300;font-size:14px;font-family:"HelveticaNeue-Light","Helvetica Neue Light","Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;line-height:45px}h3{margin:0 0 10px;padding:0;width:100%;height:20px;color:#000;letter-spacing:.07em;font-weight:300;font-size:14px;font-family:"HelveticaNeue-Light","Helvetica Neue Light","Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;line-height:20px}h4{margin:10px 0 30px;padding:0 2%;width:96%;height:20px;color:#000;text-align:center;font-weight:700;font-size:11px;font-family:"HelveticaNeue-Bold","Helvetica Neue Bold","Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;line-height:20px}h5{margin:5px 0 0;padding:0 2%;width:96%;height:11px;color:#333;text-align:center;font-weight:300;font-size:9px;font-family:"HelveticaNeue-Light","Helvetica Neue Light","Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;line-height:11px}#themes{width:100%}#themes ul{list-style-type:none}#themes ul li{float:left;padding:10px 5% 0;width:40%;background:#EEE;text-align:center}#themes ul li.selected{background:#333}#themes ul li:first-child{padding:10px 5% 0}#themes ul li img{margin:10px auto;max-width:144px;pointer-events:none}#themes ul li div{margin:0 auto 10px;width:20px;height:20px;-webkit-border-radius:10px;-moz-border-radius:10px;border-radius:10px;background:#FFF;pointer-events:none}#themes ul li.selected div{background:#000}#timezone,#night{padding:0;width:100%}#timezone ul,#night ul{width:100%}#timezone ul li,#night ul li{float:left;margin:2%;width:96%}#timezone ul li select,#night ul li select{width:100%;border:1px solid gray;background:#EEE;color:#000;font-weight:700;font-size:14px;font-family:"HelveticaNeue-Medium","Helvetica Neue Medium","Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif}#buttons{width:100%;height:50px}#buttons ul{list-style-type:none}#buttons ul li{float:left;width:50%;height:50px;background:#000;color:#FFF;text-align:center;letter-spacing:.08em;font-weight:700;font-size:14px;font-family:"HelveticaNeue-Medium","Helvetica Neue Medium","Helvetica Neue",Helvetica,Arial,"Lucida Grande",sans-serif;line-height:50px;cursor:pointer}#buttons ul li#cancel{width:35%;background:#C33;color:#7A0000}#buttons ul li#save{width:65%;background:#3C3;color:#007A00}
 </style>
@@ -76,6 +76,8 @@ html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abb
 				</li>
 			</ul>
 			
+			<input type="hidden" id="theme" data-type="string" value="<?php echo isset($_GET['theme']) && $_GET['theme'] != 'undefined' ? $_GET['theme'] : 'simple'; ?>" />
+			
 			<br class="clear" />
 		</div>
 		
@@ -86,7 +88,7 @@ html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abb
 			
 			<ul>
 				<li>
-					<select id="offset">
+					<select id="offset" data-type="int">
 						<?php
 						
 							foreach($timezones as $timezone)
@@ -118,7 +120,7 @@ html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abb
 			
 			<ul>
 				<li>
-					<select id="offset">
+					<select id="nightmode" data-type="int">
 						<option value="0"<?php echo ($_GET['nightmode'] && $_GET['nightmode'] == 0) ? 'selected="selected"' : ''; ?>>No</option>
 						<option value="1"<?php echo ($_GET['nightmode'] && $_GET['nightmode'] == 1) ? 'selected="selected"' : ''; ?>>Yes</option>
 					</select>
@@ -159,57 +161,33 @@ html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abb
 	</div>
 	
 	<script type="text/javascript">
-		var options = {
-			"0": "<?php echo $_GET['theme'] == 'complex' ? 'complex' : 'simple' ?>",
-			"1": 0,
-			"2": 0
-		};
-		
-		function getOptions() {
-			options["1"] = [
-				parseInt($("#offset").val())
-			];
-			
-			options["2"] = [
-				parseInt($("#nightmode").val())
-			];
-			
-			return options;
+		function handleThemeSelection(_event) {
+			switch(_event.target.id) {
+				case "theme-simple":
+					document.getElementById("theme-simple").className = "selected";
+					document.getElementById("theme-complex").className = "";
+					
+					document.getElementById("timezone").style.display = "none";
+					document.getElementById("night").style.display = "none";
+					
+					document.getElementById("theme").value = "simple";
+					break;
+				case "theme-complex":
+					document.getElementById("theme-complex").className = "selected";
+					document.getElementById("theme-simple").className = "";
+					
+					document.getElementById("timezone").style.display = "block";
+					document.getElementById("night").style.display = "block";
+					
+					document.getElementById("theme").value = "complex";
+					break;
+			}
 		}
-
-		$().ready(function() {
-			$("#themes ul li").click(function(e) {
-				switch(e.target.id) {
-					case "theme-simple":
-						$("#theme-simple").addClass("selected");
-						$("#theme-complex").removeClass("selected");
-						
-						$("#timezone").hide();
-						$("#night").hide();
-						
-						options["0"] = "simple";
-						break;
-					case "theme-complex":
-						$("#theme-simple").removeClass("selected");
-						$("#theme-complex").addClass("selected");
-						
-						$("#timezone").show();
-						$("#night").show();
-						
-						options["0"] = "complex";
-						break;
-				}
-			});
-			
-			$("#cancel").click(function() {
-				window.location.href = "pebblejs://close#failure";
-			});
-
-			$("#save").click(function() {
-				var location = "pebblejs://close#" + encodeURIComponent(JSON.stringify(getOptions()));
-				window.location.href = location;
-			});
-		});
+		
+		document.getElementById("theme-simple").addEventListener("click", handleThemeSelection);
+		document.getElementById("theme-complex").addEventListener("click", handleThemeSelection);
+		document.getElementById("cancel").addEventListener("click", PConfig.onCancel);
+		document.getElementById("save").addEventListener("click", PConfig.onSubmit);
     </script>
 </body>
 </html>
