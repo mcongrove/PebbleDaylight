@@ -76,7 +76,7 @@ html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abb
 				</li>
 			</ul>
 			
-			<input type="hidden" id="theme" data-type="string" value="<?php echo isset($_GET['theme']) && $_GET['theme'] != 'undefined' ? $_GET['theme'] : 'simple'; ?>" />
+			<input type="hidden" id="theme" data-type="string" />
 			
 			<br class="clear" />
 		</div>
@@ -93,16 +93,7 @@ html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abb
 						
 							foreach($timezones as $timezone)
 							{
-								$selected = '';
-								
-								if($_GET['offset'] == $timezone['value'])
-								{
-									$selected = ' selected="selected"';
-								} else if(!$_GET['offset'] && $timezone['value'] == '-5') {
-									$selected = ' selected="selected"';
-								}
-								
-								echo '<option value="' . floor($timezone['value']) . '"' . $selected . '>' . $timezone['name'] . '</option>';
+								echo '<option value="' . floor($timezone['value']) . '">' . $timezone['name'] . '</option>';
 							}
 						
 						?>
@@ -121,8 +112,8 @@ html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abb
 			<ul>
 				<li>
 					<select id="nightmode" data-type="int">
-						<option value="0"<?php echo ($_GET['nightmode'] && $_GET['nightmode'] == 0) ? 'selected="selected"' : ''; ?>>No</option>
-						<option value="1"<?php echo ($_GET['nightmode'] && $_GET['nightmode'] == 1) ? 'selected="selected"' : ''; ?>>Yes</option>
+						<option value="0">No</option>
+						<option value="1">Yes</option>
 					</select>
 				</li>
 			</ul>
