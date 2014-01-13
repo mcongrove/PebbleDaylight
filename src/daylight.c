@@ -8,7 +8,7 @@
 
 static char THEME[7] = "simple";
 static int OFFSET = -5;
-static int NIGHT = 0;
+static int NIGHTMODE = 0;
 
 Window *window;
 GBitmap *world_image;
@@ -23,9 +23,9 @@ typedef struct {
 static BarData bars[24];
 
 enum {
-	KEY_THEME,
-	KEY_OFFSET,
-	KEY_NIGHT
+	KEY_THEME = 0x0,
+	KEY_OFFSET = 0x1,
+	KEY_NIGHTMODE = 0x2
 };
 
 static void mark_all_dirty() {
@@ -35,17 +35,33 @@ static void mark_all_dirty() {
 	}
 }
 
+static void set_night_mode() {
+	if (persist_exists(KEY_NIGHTMODE)) {
+		NIGHTMODE = persist_read_int(KEY_NIGHTMODE);
+	}
+	
+	bool hide = NIGHTMODE == 0 ? true : false;
+	
+	layer_set_hidden(bitmap_layer_get_layer(world_layer_night), hide);
+	
+	APP_LOG(APP_LOG_LEVEL_INFO, "SELECTED NIGHT MODE: %d", NIGHTMODE);
+}
+
 static void set_theme() {
 	if (persist_exists(KEY_THEME)) {
 		persist_read_string(KEY_THEME, THEME, 7);
 	}
 	
-	APP_LOG(APP_LOG_LEVEL_INFO, "SELECTED THEME: %s", THEME);
-	
 	bool hide = strcmp(THEME, "simple") == 0 ? true : false;
 	
 	layer_set_hidden(bitmap_layer_get_layer(world_layer), hide);
 	layer_set_hidden(bitmap_layer_get_layer(world_layer_night), hide);
+	
+	APP_LOG(APP_LOG_LEVEL_INFO, "SELECTED THEME: %s", THEME);
+	
+	if (!hide) {
+		set_night_mode();
+	}
 }
 
 static void set_offset() {
@@ -62,44 +78,17 @@ static void set_offset() {
 	mark_all_dirty();
 }
 
-static void set_night_mode() {
-	if (persist_exists(KEY_NIGHT)) {
-		NIGHT = persist_read_int(KEY_NIGHT);
-	}
-	
-	bool hide = NIGHT == 0 ? true : false;
-	
-	layer_set_hidden(bitmap_layer_get_layer(world_layer_night), hide);
-	
-	APP_LOG(APP_LOG_LEVEL_INFO, "SELECTED NIGHT MODE: %d", NIGHT);
-	
-	mark_all_dirty();
-}
-
 static void in_received_handler(DictionaryIterator *iter, void *context) {
 	Tuple *theme_tuple = dict_find(iter, KEY_THEME);
-	Tuple *timezone_tuple = dict_find(iter, KEY_OFFSET);
+	Tuple *offset_tuple = dict_find(iter, KEY_OFFSET);
+	Tuple *nightmode_tuple = dict_find(iter, KEY_NIGHTMODE);
 	
-	if (theme_tuple) {
-		persist_write_string(KEY_THEME, theme_tuple->value->cstring);
-		strncpy(THEME, theme_tuple->value->cstring, 7);
-		
-		set_theme();
-	}
+	theme_tuple ? persist_write_string(KEY_THEME, theme_tuple->value->cstring) : false;
+	offset_tuple ? persist_write_int(KEY_OFFSET, offset_tuple->value->int8) : false;
+	nightmode_tuple ? persist_write_int(KEY_NIGHTMODE, nightmode_tuple->value->uint8) : false;
 	
-	if (timezone_tuple) {
-		int timezone = timezone_tuple->value->data[0];
-		
-		// We have to subtract 256 to fix a weird issue with how Pebble handles negative ints
-		if (timezone > 24) {
-			timezone = timezone - 256;
-		}
-		
-		persist_write_int(KEY_OFFSET, timezone);
-		OFFSET = timezone;
-		
-		set_offset();
-	}
+	set_theme();
+	set_offset();
 }
 
 static void in_dropped_handler(AppMessageResult reason, void *context) {
@@ -154,7 +143,7 @@ static void create_bar_layers() {
 static void init() {
 	app_message_register_inbox_received(in_received_handler);
 	app_message_register_inbox_dropped(in_dropped_handler);
-	app_message_open(64, 0);
+	app_message_open(128, 0);
 	
 	window = window_create();
 	window_set_background_color(window, GColorWhite);

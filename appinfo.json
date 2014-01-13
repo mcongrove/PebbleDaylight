@@ -14,7 +14,7 @@
 	"appKeys": {
 		"theme": 0,
 		"offset": 1,
-		"night": 2
+		"nightmode": 2
 	},
 	"resources": {
 		"media": [
